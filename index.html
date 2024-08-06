@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Toothbrush Animation</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, toothbrush;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Load Toothbrush model
+            const loader = new THREE.GLTFLoader();
+            loader.load('path/to/toothbrush.gltf', function(gltf) {
+                toothbrush = gltf.scene;
+                scene.add(toothbrush);
+            });
+
+            camera.position.z = 5;
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        async function connectWebSocket() {
+            const socket = new WebSocket('ws://localhost:8765');
+
+            socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (toothbrush) {
+                    toothbrush.position.set(...data.position);
+                    toothbrush.rotation.set(...data.orientation);
+                }
+            };
+
+            socket.onopen = function() {
+                console.log("WebSocket connection opened");
+            };
+
+            socket.onclose = function() {
+                console.log("WebSocket connection closed");
+            };
+
+            socket.onerror = function(error) {
+                console.error("WebSocket error:", error);
+            };
+        }
+
+        window.onload = function() {
+            init();
+            connectWebSocket();
+        };
+    </script>
+</body>
+</html>
